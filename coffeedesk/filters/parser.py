@@ -1,28 +1,30 @@
+from __future__ import annotations
+
 import dataclasses
 from operator import itemgetter
+from typing import Self
 
 import httpx
 from cytoolz import curried, pipe
-from typing import Self
 
-ENDPOINT = "https://www.coffeedesk.pl/widgets/cms/navigation/ac9d993721af3405c2059beb5e91569d/filter"
+ENDPOINT = 'https://www.coffeedesk.pl/widgets/cms/navigation/ac9d993721af3405c2059beb5e91569d/filter'
 
-ORIGIN = "Pochodzenie"
-ARABICA = "Arabica / Robusta"
-PACKAGING = "Opakowanie"
-COFFEE_TYPE = "Rodzaj kawy"
-ROASTING = "Stopień palenia ziaren"
-METHOD = "Przeznaczenie"
+ORIGIN = 'Pochodzenie'
+ARABICA = 'Arabica / Robusta'
+PACKAGING = 'Opakowanie'
+COFFEE_TYPE = 'Rodzaj kawy'
+ROASTING = 'Stopień palenia ziaren'
+METHOD = 'Przeznaczenie'
 
 
 def _extract_filters(raw_filters: dict, attribute_name: str) -> dict[str, str]:
     return pipe(
-        raw_filters["properties"]["entities"],
-        curried.filter(lambda r: r["name"] == attribute_name),
+        raw_filters['properties']['entities'],
+        curried.filter(lambda r: r['name'] == attribute_name),
         list,
         itemgetter(0),
-        itemgetter("options"),
-        curried.map(lambda r: (r["name"], r["groupId"])),
+        itemgetter('options'),
+        curried.map(lambda r: (r['name'], r['groupId'])),
         dict,
     )
 

@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  coffeedesk:
+    image: "ivanychev/coffeedesk:0.3"
+    restart: always
+    working_dir: /opt
+    command: ["python", "-m", "coffeedesk",
+              "--telegram-token=...",
+              "--telegram-channel-id=..."]
