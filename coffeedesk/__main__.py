@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 from datetime import date, datetime, timedelta
 from operator import attrgetter
+from typing import Literal
 
 import click
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -32,9 +33,13 @@ def compose_report(coffee: list[Coffee], max_in_report: int) -> str:
     '--telegram-channel-id', default='-1001758402783', help='Telegram channel ID.'
 )
 @click.option(
+    '--publish-strategy', default='telegram', help='The publish strategy (telegram or terminal).'
+)
+@click.option(
     '--max-in-report', type=int, default=30, help='Max coffee entries in report.'
 )
-def crawl(telegram_token: str, telegram_channel_id: str, max_in_report: int):
+def crawl(telegram_token: str, telegram_channel_id: str, max_in_report: int,
+          publish_strategy: str):
     s = BlockingScheduler()
     s.add_job(
         _do_crawl,
@@ -44,14 +49,16 @@ def crawl(telegram_token: str, telegram_channel_id: str, max_in_report: int):
         kwargs={
             'telegram_token': telegram_token,
             'telegram_channel_id': telegram_channel_id,
-            'max_in_report': max_in_report
+            'max_in_report': max_in_report,
+            'publish_strategy': publish_strategy
         },
         next_run_time=datetime.now(),
     )
     s.start()
 
 
-def _do_crawl(telegram_token: str, telegram_channel_id: str, max_in_report: int):
+def _do_crawl(telegram_token: str, telegram_channel_id: str, max_in_report: int,
+              publish_strategy: Literal['telegram', 'terminal']):
     logger.info('Starting crawl at {} ...', datetime.now())
     site_filters = CoffeeDeskFilters.download_and_parse()
     filter = (
@@ -72,13 +79,20 @@ def _do_crawl(telegram_token: str, telegram_channel_id: str, max_in_report: int)
     )
     logger.info('Collected {} fresh items', len(fresh_coffee))
 
-    bot = Bot(token=telegram_token)
     report = compose_report(fresh_coffee, max_in_report=max_in_report)
-    bot.send_message(
-        telegram_channel_id,
-        report,
-        parse_mode=ParseMode.HTML,
-    )
+    if publish_strategy == 'telegram':
+        bot = Bot(token=telegram_token)
+        bot.send_message(
+            telegram_channel_id,
+            report,
+            parse_mode=ParseMode.HTML,
+        )
+        logger.info("Sent message to Telegram channel: {}", telegram_channel_id)
+    elif publish_strategy == 'terminal':
+        logger.info("{}", report)
+        logger.info("Done with the report, length or report {}", len(report))
+    else:
+        raise ValueError(f"Invalid publish strategy: {publish_strategy}")
 
 
 if __name__ == '__main__':

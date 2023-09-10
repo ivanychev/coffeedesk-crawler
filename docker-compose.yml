@@ -6,4 +6,5 @@ services:
     working_dir: /opt
     command: ["python", "-m", "coffeedesk",
               "--telegram-token=...",
-              "--telegram-channel-id=..."]
+              "--telegram-channel-id=...",
+              "--publish-strategy=telegram"]
